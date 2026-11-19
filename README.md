@@ -1,12 +1,12 @@
 # MDI Chaos Lab
 
-MDI Chaos Lab is a standalone Java 17 desktop simulation built on MDI 1.2.4. It advances two Lorenz systems with the same equations and parameters and a small difference in their starting positions. The desktop shows both trajectories in the x–z plane, the primary trajectory’s three coordinates on one sPlot chart, and a separate sPlot chart for divergence.
+MDI Chaos Lab is a standalone Java 17 desktop simulation built on MDI 1.2.4. It advances two Lorenz systems with the same equations and parameters and a small difference in their starting positions. The desktop shows both trajectories in the x–z plane, the primary trajectory’s three coordinates on one sPlot chart, and a separate sPlot chart for divergence. An optional 3D view shows the same trajectories in full phase space.
 
-![MDI Chaos Lab paused at simulation time 50, showing the Lorenz butterfly, time series, and diagnostics with a divergence fit over simulation times 15 to 30 and a running Lyapunov estimate](docs/desktop-screenshot.png)
+![MDI Chaos Lab paused at simulation time 50, showing the 3D Lorenz trajectories alongside the 2D projection, time series, divergence fit, and running Lyapunov estimate](docs/desktop-screenshot.png)
 
 ## Build and run
 
-With Java 17 or newer and Maven, run the following from the project directory. Launching the application requires a graphical desktop. The tests run headlessly.
+With Java 17 or newer and Maven, run the following from the project directory. Launching the application requires a graphical desktop. The optional 3D window uses MDI-3D 1.0.3 and JOGL, and needs OpenGL support. The application opens in 2D and initializes OpenGL when the 3D window is first requested. The tests run headlessly.
 
 ```sh
 mvn clean verify
@@ -23,6 +23,7 @@ The entry point is `edu.cnu.mdi.chaos.app.ChaosApp`. The build uses the publishe
 - **Presets** fill the fields for the classic chaotic regime, a system that approaches the origin (Fixed point), or one that approaches a nonzero equilibrium (Stable lobe). Reset applies the selected values.
 - **Fit a divergence interval** by entering **Fit start** and **Fit end** in Chaos Diagnostics and clicking **Fit**. The line is a least-squares fit to the recorded samples within those bounds. The view reports the interval, sample count, and finite-time slope estimate. Pause to inspect the curve, then choose a rising segment before saturation. **Clear fit** removes the line. Reset also clears it.
 - **Estimate the largest Lyapunov exponent** by checking **Estimate Lyapunov exponent** and clicking **Reset**. The estimate appears in Chaos Diagnostics after warm-up and updates as complete intervals accumulate. Clear the checkbox and reset to disable it.
+- **3D view** opens a movable MDI window showing the same trajectories in (x, y, z). Turn off **Auto-rotate** to hold the orientation. Drag to rotate manually and use the mouse wheel to zoom. Closing the 3D window leaves the simulation running. Reopen it to see the latest trail.
 - **Capture a trajectory image** with the camera in the Lorenz Trajectories toolbar. For the classic butterfly, run until the time display reaches about 65–85, then pause. The same toolbar provides navigation and view help.
 
 ## Scientific model
@@ -53,4 +54,4 @@ This is a finite-perturbation numerical estimate whose accuracy depends on run l
 
 MDI 1.2.4 exposes run, resume and pause, but no step-once transition. The app arms a one-shot flag while the engine is Ready or Paused, then requests run. The worker consumes that flag, advances both trajectories once, and requests pause before returning from its MDI step callback. MDI checks the pause flag on the same worker before invoking the callback again. The EDT keeps the run, pause and step buttons disabled until MDI confirms Paused. Reset can retire the engine while a command is pending.
 
-The thirteen automated tests cover fourth-order convergence over a short interval, replay, reset, time, perturbation and divergence, bounded history, invalid inputs, selected-interval regression, Lyapunov estimation, and single-step behavior through the real MDI engine. 3D is future work.
+The thirteen automated tests cover fourth-order convergence over a short interval, replay, reset, time, perturbation and divergence, bounded history, invalid inputs, selected-interval regression, Lyapunov estimation, and single-step behavior through the real MDI engine.

@@ -20,6 +20,7 @@ public final class ChaosControlPanel extends JPanel {
     private final JButton run = new JButton("Start");
     private final JButton pause = new JButton("Pause");
     private final JButton step = new JButton("Single step");
+    private final JButton open3D = new JButton("3D view");
     private final JLabel status = new JLabel("Initializing…");
     private final JTextField sigma = new JTextField(5);
     private final JTextField rho = new JTextField(5);
@@ -27,7 +28,8 @@ public final class ChaosControlPanel extends JPanel {
     private final JTextField dt = new JTextField(6);
     private final JTextField delta = new JTextField(7);
 
-    public ChaosControlPanel(Runnable onRun, Runnable onPause, Runnable onStep, BiConsumer<LorenzParameters, Boolean> onReset) {
+    public ChaosControlPanel(Runnable onRun, Runnable onPause, Runnable onStep, BiConsumer<LorenzParameters, Boolean> onReset,
+                             Runnable onOpen3D) {
         super(new GridLayout(0, 1));
         setBorder(BorderFactory.createEmptyBorder(3, 8, 5, 8));
 
@@ -40,6 +42,8 @@ public final class ChaosControlPanel extends JPanel {
         var lyapunov = new JCheckBox("Estimate Lyapunov exponent");
         lyapunov.setToolTipText("Use periodic renormalization on the next reset");
         actions.add(lyapunov);
+        open3D.addActionListener(event -> onOpen3D.run());
+        actions.add(open3D);
         var actionRow = new JPanel(new BorderLayout(10, 0));
         actionRow.add(actions, BorderLayout.WEST);
         actionRow.add(status, BorderLayout.CENTER);
@@ -91,6 +95,11 @@ public final class ChaosControlPanel extends JPanel {
             case TERMINATED -> "Stopped";
             case FAILED -> "Simulation stopped. Reset to start again.";
         });
+    }
+
+    public void setOpening3D(boolean opening) {
+        open3D.setText(opening ? "Opening 3D…" : "3D view");
+        open3D.setEnabled(!opening);
     }
 
     public void pending(String message) {

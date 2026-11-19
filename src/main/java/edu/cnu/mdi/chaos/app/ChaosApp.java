@@ -1,12 +1,20 @@
 package edu.cnu.mdi.chaos.app;
 
 import java.awt.BorderLayout;
+import java.beans.PropertyVetoException;
+import java.util.concurrent.ExecutionException;
+
+import javax.swing.JOptionPane;
+import javax.swing.SwingWorker;
+
+import com.jogamp.opengl.GLProfile;
 
 import edu.cnu.mdi.app.BaseMDIApplication;
 import edu.cnu.mdi.chaos.model.LorenzParameters;
 import edu.cnu.mdi.chaos.sim.ChaosSimulation;
 import edu.cnu.mdi.chaos.view.ChaosControlPanel;
 import edu.cnu.mdi.chaos.view.ChaosPlotView;
+import edu.cnu.mdi.chaos.view.Lorenz3DView;
 import edu.cnu.mdi.chaos.view.LorenzView;
 import edu.cnu.mdi.desktop.Desktop;
 import edu.cnu.mdi.sim.SimulationContext;
@@ -16,6 +24,8 @@ import edu.cnu.mdi.util.PropertyUtils;
 
 public final class ChaosApp extends BaseMDIApplication implements SimulationListener {
     private LorenzView trajectories;
+    private Lorenz3DView trajectories3D;
+    private LorenzParameters activeParameters;
     private ChaosPlotView timeSeries;
     private ChaosPlotView diagnostics;
     private ChaosControlPanel controls;
@@ -25,7 +35,8 @@ public final class ChaosApp extends BaseMDIApplication implements SimulationList
 
     private ChaosApp() {
         super(PropertyUtils.TITLE, "MDI Chaos Lab", PropertyUtils.FRACTION, 0.94);
-        controls = new ChaosControlPanel(this::runSimulation, this::pauseSimulation, this::singleStep, this::reset);
+        controls = new ChaosControlPanel(this::runSimulation, this::pauseSimulation, this::singleStep,
+                this::reset, this::open3D);
         add(controls, BorderLayout.SOUTH);
         reset(LorenzParameters.DEFAULT, false);
     }
@@ -67,6 +78,63 @@ public final class ChaosApp extends BaseMDIApplication implements SimulationList
         }
     }
 
+    private void open3D() {
+        if (trajectories3D != null) {
+            show3D();
+            return;
+        }
+        controls.setOpening3D(true);
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() {
+                // On macOS JOGL needs the native main thread during its first profile discovery.
+                GLProfile.initSingleton();
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                if (simulation == null) {
+                    return;
+                }
+                controls.setOpening3D(false);
+                try {
+                    get();
+                } catch (InterruptedException error) {
+                    Thread.currentThread().interrupt();
+                    return;
+                } catch (ExecutionException error) {
+                    JOptionPane.showMessageDialog(ChaosApp.this, "OpenGL initialization failed. "
+                            + "The 2D views are still available.", "3D view unavailable", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                create3D();
+                show3D();
+            }
+        }.execute();
+    }
+
+    private void create3D() {
+        trajectories3D = new Lorenz3DView(activeParameters);
+        var desktop = Desktop.getInstance();
+        int width = Math.min(700, (int) (desktop.getWidth() * 0.50));
+        int height = Math.min(590, (int) (desktop.getHeight() * 0.80));
+        trajectories3D.setBounds(22, 22, width, height);
+        if (lastSample >= 0) {
+            trajectories3D.update(simulation.readSince(-1));
+        }
+    }
+
+    private void show3D() {
+        try {
+            trajectories3D.setIcon(false);
+        } catch (PropertyVetoException ignored) {
+            return;
+        }
+        trajectories3D.setVisible(true);
+        trajectories3D.moveToFront();
+    }
+
     private void runSimulation() {
         controls.pending("Starting…");
         simulation.engine().requestRun();
@@ -91,7 +159,11 @@ public final class ChaosApp extends BaseMDIApplication implements SimulationList
         controls.pending("Resetting…");
         stepping = false;
         lastSample = -1;
+        activeParameters = parameters;
         trajectories.clear(parameters);
+        if (trajectories3D != null) {
+            trajectories3D.clear(parameters);
+        }
         timeSeries.clear();
         diagnostics.clear();
         diagnostics.resetDiagnostic(parameters.delta0() == 0);
@@ -118,6 +190,9 @@ public final class ChaosApp extends BaseMDIApplication implements SimulationList
         }
         var frame = simulation.readSince(lastSample);
         trajectories.update(frame);
+        if (trajectories3D != null) {
+            trajectories3D.update(frame);
+        }
         timeSeries.append(frame.samples());
         diagnostics.append(frame.samples());
         diagnostics.showLyapunovEstimate(frame.lyapunovEstimate());
