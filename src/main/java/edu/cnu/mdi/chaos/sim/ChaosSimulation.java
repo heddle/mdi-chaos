@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import edu.cnu.mdi.chaos.model.ChaosModel;
 import edu.cnu.mdi.chaos.model.ChaosSnapshot;
 import edu.cnu.mdi.chaos.model.LorenzParameters;
+import edu.cnu.mdi.chaos.model.LyapunovEstimate;
 import edu.cnu.mdi.sim.Simulation;
 import edu.cnu.mdi.sim.SimulationContext;
 import edu.cnu.mdi.sim.SimulationEngine;
@@ -17,13 +18,19 @@ public final class ChaosSimulation implements Simulation {
     private static final int BATCH_PERIOD_MS = 10;
 
     private final LorenzParameters parameters;
+    private final boolean estimateLyapunov;
     private final SimulationEngine engine;
     private final AtomicBoolean singleStep = new AtomicBoolean();
     private final int stepsPerBatch;
     private ChaosModel model;
 
     public ChaosSimulation(LorenzParameters parameters, SimulationListener listener) {
+        this(parameters, false, listener);
+    }
+
+    public ChaosSimulation(LorenzParameters parameters, boolean estimateLyapunov, SimulationListener listener) {
         this.parameters = parameters;
+        this.estimateLyapunov = estimateLyapunov;
         stepsPerBatch = Math.max(1, (int) Math.round(0.04 / parameters.dt()));
         engine = new SimulationEngine(this, new SimulationEngineConfig(40, 0, 0, false));
         engine.addListener(listener);
@@ -41,7 +48,7 @@ public final class ChaosSimulation implements Simulation {
 
     @Override
     public synchronized void init(SimulationContext context) {
-        model = new ChaosModel(parameters, HISTORY_CAPACITY);
+        model = new ChaosModel(parameters, HISTORY_CAPACITY, estimateLyapunov);
     }
 
     @Override
@@ -64,10 +71,10 @@ public final class ChaosSimulation implements Simulation {
 
     /** Reads the exact current state and only the retained samples the EDT has yet to consume. */
     public synchronized Frame readSince(long step) {
-        return new Frame(model.current(), model.samplesAfter(step));
+        return new Frame(model.current(), model.samplesAfter(step), model.lyapunovEstimate());
     }
 
-    public record Frame(ChaosSnapshot current, List<ChaosSnapshot> samples) {
+    public record Frame(ChaosSnapshot current, List<ChaosSnapshot> samples, LyapunovEstimate lyapunovEstimate) {
         public Frame {
             samples = List.copyOf(samples);
         }

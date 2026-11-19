@@ -3,10 +3,11 @@ package edu.cnu.mdi.chaos.view;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -26,7 +27,7 @@ public final class ChaosControlPanel extends JPanel {
     private final JTextField dt = new JTextField(6);
     private final JTextField delta = new JTextField(7);
 
-    public ChaosControlPanel(Runnable onRun, Runnable onPause, Runnable onStep, Consumer<LorenzParameters> onReset) {
+    public ChaosControlPanel(Runnable onRun, Runnable onPause, Runnable onStep, BiConsumer<LorenzParameters, Boolean> onReset) {
         super(new GridLayout(0, 1));
         setBorder(BorderFactory.createEmptyBorder(3, 8, 5, 8));
 
@@ -36,6 +37,9 @@ public final class ChaosControlPanel extends JPanel {
         actions.add(pause);
         actions.add(step);
         actions.add(reset);
+        var lyapunov = new JCheckBox("Estimate Lyapunov exponent");
+        lyapunov.setToolTipText("Use periodic renormalization on the next reset");
+        actions.add(lyapunov);
         var actionRow = new JPanel(new BorderLayout(10, 0));
         actionRow.add(actions, BorderLayout.WEST);
         actionRow.add(status, BorderLayout.CENTER);
@@ -61,7 +65,8 @@ public final class ChaosControlPanel extends JPanel {
         step.addActionListener(event -> onStep.run());
         reset.addActionListener(event -> {
             try {
-                onReset.accept(new LorenzParameters(value(sigma), value(rho), value(beta), value(dt), value(delta)));
+                onReset.accept(new LorenzParameters(value(sigma), value(rho), value(beta), value(dt), value(delta)),
+                        lyapunov.isSelected());
             } catch (NumberFormatException error) {
                 status.setText("Enter a number in each parameter field.");
             } catch (IllegalArgumentException error) {

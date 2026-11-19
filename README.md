@@ -2,7 +2,7 @@
 
 MDI Chaos Lab is a standalone Java 17 desktop simulation built on MDI 1.2.4. It advances two Lorenz systems with the same equations and parameters and a small difference in their starting positions. The desktop shows both trajectories in the x–z plane, the primary trajectory’s three coordinates on one sPlot chart, and a separate sPlot chart for divergence.
 
-![MDI Chaos Lab paused at simulation time 50, showing the Lorenz butterfly, time series, and a divergence fit over simulation times 15 to 30](docs/desktop-screenshot.png)
+![MDI Chaos Lab paused at simulation time 50, showing the Lorenz butterfly, time series, and diagnostics with a divergence fit over simulation times 15 to 30 and a running Lyapunov estimate](docs/desktop-screenshot.png)
 
 ## Build and run
 
@@ -22,6 +22,7 @@ The entry point is `edu.cnu.mdi.chaos.app.ChaosApp`. The build uses the publishe
 - **Reset** validates and applies the parameter fields, clears every view’s history, and restores the initial conditions at time zero. Start or single-step to continue.
 - **Presets** fill the fields for the classic chaotic regime, a system that approaches the origin (Fixed point), or one that approaches a nonzero equilibrium (Stable lobe). Reset applies the selected values.
 - **Fit a divergence interval** by entering **Fit start** and **Fit end** in Chaos Diagnostics and clicking **Fit**. The line is a least-squares fit to the recorded samples within those bounds. The view reports the interval, sample count, and finite-time slope estimate. Pause to inspect the curve, then choose a rising segment before saturation. **Clear fit** removes the line. Reset also clears it.
+- **Estimate the largest Lyapunov exponent** by checking **Estimate Lyapunov exponent** and clicking **Reset**. The estimate appears in Chaos Diagnostics after warm-up and updates as complete intervals accumulate. Clear the checkbox and reset to disable it.
 - **Capture a trajectory image** with the camera in the Lorenz Trajectories toolbar. For the classic butterfly, run until the time display reaches about 65–85, then pause. The same toolbar provides navigation and view help.
 
 ## Scientific model
@@ -36,7 +37,13 @@ The equations are `dx/dt = σ(y − x)`, `dy/dt = x(ρ − z) − y`, and `dz/dt
 | dt | 0.005 | 0.0001–0.01 |
 | δ₀ | 10⁻⁸ | 0 or 10⁻¹⁵–0.1 |
 
-The diagnostic plots the natural log of the instantaneous Euclidean separation divided by δ₀. Locally exponential growth can appear as a roughly straight segment, with fluctuations over a finite interval. Once the trajectories are separated at the scale of the attractor, the separation stays bounded and the log curve can flatten or fluctuate. A fit across that saturated portion would misrepresent the growth rate. The selected-interval slope is an illustrative finite-time estimate. The app performs no perturbation renormalization. Undefined log values are omitted. For δ₀ = 0 the two trajectories coincide and the diagnostic is undefined. Very small positive δ₀ values also expose floating-point rounding in the actual initial displacement. Numerical overflow stops the run and displays an error.
+The diagnostic plots the natural log of the instantaneous Euclidean separation divided by δ₀. Locally exponential growth can appear as a roughly straight segment, with fluctuations over a finite interval. Once the trajectories are separated at the scale of the attractor, the separation stays bounded and the log curve can flatten or fluctuate. A fit across that saturated portion would misrepresent the growth rate. The selected-interval slope is an illustrative finite-time estimate. Undefined log values are omitted. For δ₀ = 0 the two trajectories coincide and the diagnostic is undefined. Very small positive δ₀ values also expose floating-point rounding in the actual initial displacement. Numerical overflow stops the run and displays an error.
+
+### Optional largest Lyapunov exponent estimate
+
+A third trajectory starts approximately 10⁻⁷ away from the primary and uses the same time step and model parameters. Every 0.5 simulation time units (rounded to the nearest whole integration step), the estimator records the natural log of the separation growth, then rescales the separation back to 10⁻⁷ along its current direction. It uses the actual floating-point starting distance for each interval. After at least 10 units of warm-up, the running estimate divides the sum of recorded log growth by the total duration of the completed measurement intervals.
+
+This is a finite-perturbation numerical estimate whose accuracy depends on run length, step size, and numerical resolution. The classic preset has a [reference largest exponent of about 0.906](https://sprott.physics.wisc.edu/chaos/lespec.htm) per simulation time unit. The estimate uses its own perturbation, independent of δ₀, so the displayed trajectories and interactive interval fit retain their original behavior.
 
 ## Execution and presentation
 
@@ -46,4 +53,4 @@ The diagnostic plots the natural log of the instantaneous Euclidean separation d
 
 MDI 1.2.4 exposes run, resume and pause, but no step-once transition. The app arms a one-shot flag while the engine is Ready or Paused, then requests run. The worker consumes that flag, advances both trajectories once, and requests pause before returning from its MDI step callback. MDI checks the pause flag on the same worker before invoking the callback again. The EDT keeps the run, pause and step buttons disabled until MDI confirms Paused. Reset can retire the engine while a command is pending.
 
-The ten automated tests cover fourth-order convergence over a short interval, replay, reset, time, perturbation and divergence, bounded history, invalid inputs, selected-interval regression, and single-step behavior through the real MDI engine. Renormalization and 3D are future work.
+The thirteen automated tests cover fourth-order convergence over a short interval, replay, reset, time, perturbation and divergence, bounded history, invalid inputs, selected-interval regression, Lyapunov estimation, and single-step behavior through the real MDI engine. 3D is future work.

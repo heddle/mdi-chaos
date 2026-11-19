@@ -4,9 +4,15 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.ToDoubleFunction;
 
+import javax.swing.BorderFactory;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
 import edu.cnu.mdi.chaos.model.ChaosSnapshot;
+import edu.cnu.mdi.chaos.model.LyapunovEstimate;
 import edu.cnu.mdi.chaos.sim.ChaosSimulation;
 import edu.cnu.mdi.graphics.style.SymbolType;
 import edu.cnu.mdi.splot.fit.CurveDrawingMethod;
@@ -25,6 +31,7 @@ public final class ChaosPlotView extends BaseView {
     private final Curve[] curves;
     private final List<Series> series;
     private final DivergenceFitPanel fitPanel;
+    private final JLabel lyapunov = new JLabel();
 
     public static ChaosPlotView timeSeries() {
         return new ChaosPlotView("Time Series", "Primary trajectory", "Coordinate", false,
@@ -77,13 +84,37 @@ public final class ChaosPlotView extends BaseView {
         canvas.getPlotTicks().setNumMajorTickY(4);
         add(new PlotPanel(canvas, PlotPanel.BARE), BorderLayout.CENTER);
         if (fitPanel != null) {
-            add(fitPanel, BorderLayout.SOUTH);
+            var diagnosticControls = new JPanel(new BorderLayout());
+            lyapunov.setBorder(BorderFactory.createEmptyBorder(2, 8, 6, 8));
+            lyapunov.setVisible(false);
+            diagnosticControls.add(lyapunov, BorderLayout.NORTH);
+            diagnosticControls.add(fitPanel, BorderLayout.SOUTH);
+            add(diagnosticControls, BorderLayout.SOUTH);
         }
         canvas.standUp();
     }
 
     public void resetDiagnostic(boolean zeroPerturbation) {
         fitPanel.reset(zeroPerturbation);
+        showLyapunovEstimate(null);
+    }
+
+    public void showLyapunovEstimate(LyapunovEstimate estimate) {
+        lyapunov.setVisible(estimate != null);
+        if (estimate == null) {
+            return;
+        }
+        if (estimate.failed()) {
+            lyapunov.setText("<html>Lyapunov estimate unavailable.<br>The nearby trajectory lost numerical resolution.</html>");
+        } else if (estimate.measuredIntervals() == 0) {
+            lyapunov.setText(String.format(Locale.ROOT,
+                    "Lyapunov estimate warming up (first sample at t ≈ %.3f)",
+                    estimate.warmupTime() + estimate.interval()));
+        } else {
+            lyapunov.setText(String.format(Locale.ROOT,
+                    "<html>Largest Lyapunov exponent ≈ %.4f per time unit<br>Averaged over %.2f time units</html>",
+                    estimate.exponent(), estimate.averagingTime()));
+        }
     }
 
     public void append(List<ChaosSnapshot> samples) {

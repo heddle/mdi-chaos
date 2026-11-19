@@ -27,7 +27,7 @@ public final class ChaosApp extends BaseMDIApplication implements SimulationList
         super(PropertyUtils.TITLE, "MDI Chaos Lab", PropertyUtils.FRACTION, 0.94);
         controls = new ChaosControlPanel(this::runSimulation, this::pauseSimulation, this::singleStep, this::reset);
         add(controls, BorderLayout.SOUTH);
-        reset(LorenzParameters.DEFAULT);
+        reset(LorenzParameters.DEFAULT, false);
     }
 
     public static void main(String[] args) {
@@ -83,7 +83,7 @@ public final class ChaosApp extends BaseMDIApplication implements SimulationList
         simulation.requestSingleStep();
     }
 
-    private void reset(LorenzParameters parameters) {
+    private void reset(LorenzParameters parameters, boolean estimateLyapunov) {
         if (simulation != null) {
             simulation.engine().removeListener(this);
             simulation.engine().requestCancel();
@@ -95,7 +95,7 @@ public final class ChaosApp extends BaseMDIApplication implements SimulationList
         timeSeries.clear();
         diagnostics.clear();
         diagnostics.resetDiagnostic(parameters.delta0() == 0);
-        simulation = new ChaosSimulation(parameters, this);
+        simulation = new ChaosSimulation(parameters, estimateLyapunov, this);
         simulation.engine().start();
     }
 
@@ -120,6 +120,7 @@ public final class ChaosApp extends BaseMDIApplication implements SimulationList
         trajectories.update(frame);
         timeSeries.append(frame.samples());
         diagnostics.append(frame.samples());
+        diagnostics.showLyapunovEstimate(frame.lyapunovEstimate());
         if (!frame.samples().isEmpty()) {
             lastSample = frame.samples().get(frame.samples().size() - 1).step();
         }
