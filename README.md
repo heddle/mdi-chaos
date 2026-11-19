@@ -4,7 +4,19 @@ MDI Chaos Lab is a standalone Java 17 desktop simulation built on MDI 1.2.4. It 
 
 ![MDI Chaos Lab paused at simulation time 50, showing the 3D Lorenz trajectories alongside the 2D projection, time series, divergence fit, and running Lyapunov estimate](docs/desktop-screenshot.png)
 
-## Build and run
+## Run the prebuilt download
+
+[Download the v1.0.0 runnable ZIP](https://github.com/heddle/mdi-chaos/releases/download/v1.0.0/mdi-chaos-1.0.0-runnable.zip).
+
+With Java 17 or newer installed, extract the entire ZIP, open a terminal in the extracted folder, and run:
+
+```sh
+java -jar mdi-chaos.jar
+```
+
+Keep the bundled `lib` folder next to the JAR. No Maven build is required.
+
+## Build from source
 
 With Java 17 or newer and Maven, run the following from the project directory. Launching the application requires a graphical desktop. The optional 3D window uses MDI-3D 1.0.3 and JOGL, and needs OpenGL support. The application opens in 2D and initializes OpenGL when the 3D window is first requested. The tests run headlessly.
 
