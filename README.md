@@ -2,6 +2,8 @@
 
 MDI Chaos Lab is a standalone Java 17 desktop simulation built on MDI 1.2.4. It advances two Lorenz systems with the same equations and parameters and a small difference in their starting positions. The desktop shows both trajectories in the x–z plane, the primary trajectory’s three coordinates on one sPlot chart, and a separate sPlot chart for divergence.
 
+![MDI Chaos Lab paused at simulation time 50, showing the Lorenz butterfly, time series, and divergence plots](docs/desktop-screenshot.png)
+
 ## Build and run
 
 With Java 17 or newer and Maven, run the following from the project directory. Launching the application requires a graphical desktop. The tests run headlessly.
