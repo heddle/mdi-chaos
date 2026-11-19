@@ -94,7 +94,7 @@ public final class ChaosApp extends BaseMDIApplication implements SimulationList
         trajectories.clear(parameters);
         timeSeries.clear();
         diagnostics.clear();
-        diagnostics.showUndefinedDiagnostic(parameters.delta0() == 0);
+        diagnostics.resetDiagnostic(parameters.delta0() == 0);
         simulation = new ChaosSimulation(parameters, this);
         simulation.engine().start();
     }

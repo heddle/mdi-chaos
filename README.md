@@ -2,7 +2,7 @@
 
 MDI Chaos Lab is a standalone Java 17 desktop simulation built on MDI 1.2.4. It advances two Lorenz systems with the same equations and parameters and a small difference in their starting positions. The desktop shows both trajectories in the x–z plane, the primary trajectory’s three coordinates on one sPlot chart, and a separate sPlot chart for divergence.
 
-![MDI Chaos Lab paused at simulation time 50, showing the Lorenz butterfly, time series, and divergence plots](docs/desktop-screenshot.png)
+![MDI Chaos Lab paused at simulation time 50, showing the Lorenz butterfly, time series, and a divergence fit over simulation times 15 to 30](docs/desktop-screenshot.png)
 
 ## Build and run
 
@@ -21,6 +21,7 @@ The entry point is `edu.cnu.mdi.chaos.app.ChaosApp`. The build uses the publishe
 - **Single step** advances both systems by one integration step from Ready or Paused and leaves the simulation paused.
 - **Reset** validates and applies the parameter fields, clears every view’s history, and restores the initial conditions at time zero. Start or single-step to continue.
 - **Presets** fill the fields for the classic chaotic regime, a system that approaches the origin (Fixed point), or one that approaches a nonzero equilibrium (Stable lobe). Reset applies the selected values.
+- **Fit a divergence interval** by entering **Fit start** and **Fit end** in Chaos Diagnostics and clicking **Fit**. The line is a least-squares fit to the recorded samples within those bounds. The view reports the interval, sample count, and finite-time slope estimate. Pause to inspect the curve, then choose a rising segment before saturation. **Clear fit** removes the line. Reset also clears it.
 - **Capture a trajectory image** with the camera in the Lorenz Trajectories toolbar. For the classic butterfly, run until the time display reaches about 65–85, then pause. The same toolbar provides navigation and view help.
 
 ## Scientific model
@@ -35,7 +36,7 @@ The equations are `dx/dt = σ(y − x)`, `dy/dt = x(ρ − z) − y`, and `dz/dt
 | dt | 0.005 | 0.0001–0.01 |
 | δ₀ | 10⁻⁸ | 0 or 10⁻¹⁵–0.1 |
 
-The diagnostic plots the natural log of the instantaneous Euclidean separation divided by δ₀. Locally exponential growth can appear as a roughly straight segment, with fluctuations over a finite interval. Once the trajectories are separated at the scale of the attractor, the separation stays bounded and the log curve can flatten or fluctuate. A fit across that saturated portion would misrepresent the growth rate. The display is illustrative and performs no slope fitting or perturbation renormalization. Undefined log values are omitted. For δ₀ = 0 the two trajectories coincide and the diagnostic is undefined. Very small positive δ₀ values also expose floating-point rounding in the actual initial displacement. Numerical overflow stops the run and displays an error.
+The diagnostic plots the natural log of the instantaneous Euclidean separation divided by δ₀. Locally exponential growth can appear as a roughly straight segment, with fluctuations over a finite interval. Once the trajectories are separated at the scale of the attractor, the separation stays bounded and the log curve can flatten or fluctuate. A fit across that saturated portion would misrepresent the growth rate. The selected-interval slope is an illustrative finite-time estimate. The app performs no perturbation renormalization. Undefined log values are omitted. For δ₀ = 0 the two trajectories coincide and the diagnostic is undefined. Very small positive δ₀ values also expose floating-point rounding in the actual initial displacement. Numerical overflow stops the run and displays an error.
 
 ## Execution and presentation
 
@@ -45,4 +46,4 @@ The diagnostic plots the natural log of the instantaneous Euclidean separation d
 
 MDI 1.2.4 exposes run, resume and pause, but no step-once transition. The app arms a one-shot flag while the engine is Ready or Paused, then requests run. The worker consumes that flag, advances both trajectories once, and requests pause before returning from its MDI step callback. MDI checks the pause flag on the same worker before invoking the callback again. The EDT keeps the run, pause and step buttons disabled until MDI confirms Paused. Reset can retire the engine while a command is pending.
 
-The eight automated tests cover fourth-order convergence over a short interval, replay, reset, time, perturbation and divergence, bounded history, invalid inputs, and single-step behavior through the real MDI engine. Interactive fitting, renormalization and 3D are future work.
+The ten automated tests cover fourth-order convergence over a short interval, replay, reset, time, perturbation and divergence, bounded history, invalid inputs, selected-interval regression, and single-step behavior through the real MDI engine. Renormalization and 3D are future work.
