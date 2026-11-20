@@ -1,0 +1,30 @@
+name: Build runnable release ZIP
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Verify and package
+        run: bash scripts/build-runnable.sh "$GITHUB_REF_NAME"
+      - name: Upload runnable ZIP
+        uses: actions/upload-artifact@v7
+        with:
+          path: target/mdi-chaos-*-runnable.zip
+          archive: false
+          if-no-files-found: error

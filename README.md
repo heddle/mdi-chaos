@@ -27,6 +27,21 @@ mvn exec:java
 
 The entry point is `edu.cnu.mdi.chaos.app.ChaosApp`. The build uses the published `io.github.heddle:mdi:1.2.4` dependency.
 
+## Build a runnable release ZIP
+
+Pushing a version tag such as `v1.0.1` runs the Maven tests and builds the
+runnable ZIP with Java 17 in GitHub Actions. Set the version in `pom.xml` to
+the tag version before tagging. Download the ZIP from the workflow run's
+**Artifacts** section.
+
+To reproduce the build locally with Maven, a JDK, and Python 3:
+
+```sh
+bash scripts/build-runnable.sh
+```
+
+The ZIP is written to `target/`.
+
 ## Explore the simulation
 
 - **Start** begins from the initial conditions. **Pause** stops at the next worker batch boundary. **Resume** continues the same run.
