@@ -3,8 +3,7 @@ package edu.cnu.mdi.chaos.view;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FlowLayout;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
+import java.awt.event.HierarchyEvent;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Locale;
@@ -41,7 +40,15 @@ public final class Lorenz3DView extends BaseView {
     public Lorenz3DView(LorenzParameters parameters) {
         super(PropertyUtils.TITLE, "Lorenz Trajectories (3D)", PropertyUtils.USECONTAINER, false,
                 PropertyUtils.WIDTH, 550, PropertyUtils.HEIGHT, 480);
-        scene = new Panel3D(-62, 0, -20, 0, 0, -3.6f, 0.05f, 0.086f, 0.133f, false);
+        scene = new Panel3D(-62, 0, -20, 0, 0, -3.6f, 0.05f, 0.086f, 0.133f, false) {
+            @Override
+            public void refresh() {
+                // Rotation and navigation update the camera immediately; let Swing schedule the GL paint.
+                if (isShowing()) {
+                    softRefresh();
+                }
+            }
+        };
         orbits = new Orbits(scene);
         scene.addItem(orbits);
         add(scene, BorderLayout.CENTER);
@@ -54,25 +61,19 @@ public final class Lorenz3DView extends BaseView {
         }
         add(controls, BorderLayout.SOUTH);
 
-        rotation = new Timer(50, event -> scene.rotateY(0.65f));
-        autoRotate.setEnabled(scene.isGLAvailable());
-        autoRotate.addActionListener(event -> updateRotation());
-        addPropertyChangeListener(IS_ICON_PROPERTY, event -> {
-            updateRotation();
-            if (!isIcon()) {
-                render();
+        rotation = new Timer(50, event -> {
+            if (canRotate()) {
+                scene.rotateY(0.65f);
+            } else {
+                ((Timer) event.getSource()).stop();
             }
         });
-        addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentShown(ComponentEvent event) {
-                updateRotation();
-                render();
-            }
-
-            @Override
-            public void componentHidden(ComponentEvent event) {
-                updateRotation();
+        autoRotate.setEnabled(scene.isGLAvailable());
+        autoRotate.addActionListener(event -> updateRotation());
+        addPropertyChangeListener(IS_ICON_PROPERTY, event -> updateVisibility());
+        addHierarchyListener(event -> {
+            if ((event.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0) {
+                updateVisibility();
             }
         });
         clear(parameters);
@@ -134,8 +135,19 @@ public final class Lorenz3DView extends BaseView {
         coordinates[offset + 2] = (float) ((state.z() - centerZ) / scale);
     }
 
+    private void updateVisibility() {
+        updateRotation();
+        if (isShowing() && !isIcon()) {
+            render();
+        }
+    }
+
+    private boolean canRotate() {
+        return isShowing() && !isIcon() && scene.isGLAvailable() && autoRotate.isSelected();
+    }
+
     private void updateRotation() {
-        if (isShowing() && !isIcon() && scene.isGLAvailable() && autoRotate.isSelected()) {
+        if (canRotate()) {
             rotation.start();
         } else {
             rotation.stop();
@@ -145,9 +157,7 @@ public final class Lorenz3DView extends BaseView {
     @Override
     public void prepareForExit() {
         rotation.stop();
-        if (scene.isGLAvailable()) {
-            scene.getGLJPanel().destroy();
-        }
+        // Disposing the enclosing Swing window calls GLJPanel.removeNotify() and releases its context.
         super.prepareForExit();
     }
 
