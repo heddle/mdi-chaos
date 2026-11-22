@@ -6,7 +6,7 @@ MDI Chaos Lab is a standalone Java 17 desktop simulation built on MDI 1.2.4. It 
 
 ## Run the prebuilt download
 
-[Download the v1.0.3 runnable ZIP](https://github.com/heddle/mdi-chaos/releases/download/v1.0.3/mdi-chaos-1.0.3-runnable.zip) · [Release notes](https://github.com/heddle/mdi-chaos/releases/tag/v1.0.3).
+[Download the latest runnable ZIP](https://github.com/heddle/mdi-chaos/releases/latest/download/mdi-chaos-runnable.zip) · [Release notes](https://github.com/heddle/mdi-chaos/releases/latest).
 
 With Java 17 or newer installed, extract the entire ZIP, open a terminal in the extracted folder, and run:
 
@@ -32,7 +32,8 @@ The entry point is `edu.cnu.mdi.chaos.app.ChaosApp`. The build uses the publishe
 Pushing a version tag such as `v1.0.1` runs the Maven tests and builds the
 runnable ZIP with Java 17 in GitHub Actions. Set the version in `pom.xml` to
 match the tag before pushing it. If the tests and packaging pass, the workflow
-publishes a GitHub release with generated notes and attaches the ZIP. The ZIP
+publishes a GitHub release with generated notes and attaches the ZIP as
+`mdi-chaos-runnable.zip`, keeping the latest download link stable. The ZIP
 is also available in the workflow run's **Artifacts** section.
 
 To reproduce the build locally with Maven, a JDK, and Python 3:
