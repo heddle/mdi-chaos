@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>edu.cnu</groupId>
     <artifactId>mdi-chaos</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
     <name>MDI Chaos Lab</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
