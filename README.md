@@ -31,8 +31,9 @@ The entry point is `edu.cnu.mdi.chaos.app.ChaosApp`. The build uses the publishe
 
 Pushing a version tag such as `v1.0.1` runs the Maven tests and builds the
 runnable ZIP with Java 17 in GitHub Actions. Set the version in `pom.xml` to
-the tag version before tagging. Download the ZIP from the workflow run's
-**Artifacts** section.
+match the tag before pushing it. If the tests and packaging pass, the workflow
+publishes a GitHub release with generated notes and attaches the ZIP. The ZIP
+is also available in the workflow run's **Artifacts** section.
 
 To reproduce the build locally with Maven, a JDK, and Python 3:
 
