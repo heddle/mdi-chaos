@@ -32,8 +32,39 @@ jobs:
           archive: false
           if-no-files-found: error
 
-  publish:
+  desktop-smoke:
     needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Download runnable ZIP
+        uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact-id }}
+          path: release-assets
+          skip-decompress: true
+      - name: Install virtual desktop and OpenGL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb xauth libgl1-mesa-dri libglx-mesa0 mesa-utils
+      - name: Verify packaged app on a virtual desktop
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          xvfb-run -a --server-args="-screen 0 1600x1000x24 +extension GLX" bash -euc '
+            glxinfo -B
+            bash scripts/smoke-test-zip.sh "$1"
+          ' bash "release-assets/mdi-chaos-${GITHUB_REF_NAME#v}-runnable.zip"
+
+  publish:
+    needs: [build, desktop-smoke]
     runs-on: ubuntu-latest
     permissions:
       contents: write
