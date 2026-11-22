@@ -6,7 +6,7 @@ MDI Chaos Lab is a standalone Java 17 desktop simulation built on MDI 1.2.4. It 
 
 ## Run the prebuilt download
 
-[Download the v1.0.2 runnable ZIP](https://github.com/heddle/mdi-chaos/releases/download/v1.0.2/mdi-chaos-1.0.2-runnable.zip) · [Release notes](https://github.com/heddle/mdi-chaos/releases/tag/v1.0.2).
+[Download the v1.0.3 runnable ZIP](https://github.com/heddle/mdi-chaos/releases/download/v1.0.3/mdi-chaos-1.0.3-runnable.zip) · [Release notes](https://github.com/heddle/mdi-chaos/releases/tag/v1.0.3).
 
 With Java 17 or newer installed, extract the entire ZIP, open a terminal in the extracted folder, and run:
 
