@@ -44,6 +44,22 @@ bash scripts/build-runnable.sh
 
 The ZIP is written to `target/`.
 
+## Verify a release ZIP on the desktop
+
+With a JDK 17 or newer, a graphical desktop with working OpenGL, Bash, and
+`unzip`, run the smoke test from this checkout:
+
+```sh
+bash scripts/smoke-test-zip.sh /path/to/mdi-chaos-runnable.zip
+```
+
+The test launches the downloaded JAR and bundled libraries without Maven.
+It checks the 2D plots, divergence fit, Lyapunov estimate, simulation controls,
+and 16 consecutive 3D close-and-reopen cycles. It opens a real desktop window,
+uses a temporary working directory, and reports a failure if Swing stalls.
+The test uses internal application state, so use the smoke test from the same
+revision as the app if a future release changes the UI or model structure.
+
 ## Explore the simulation
 
 - **Start** begins from the initial conditions. **Pause** stops at the next worker batch boundary. **Resume** continues the same run.
