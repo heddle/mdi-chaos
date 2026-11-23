@@ -78,6 +78,10 @@ revision as the app if a future release changes the UI or model structure.
   The export uses the bounded sample history available when you click **Export CSV**.
 - **Capture a trajectory image** with the camera in the Lorenz Trajectories toolbar. For the classic butterfly, run until the time display reaches about 65–85, then pause. The same toolbar provides navigation and view help.
 
+The MDI Companion's [guided preset comparison](https://heddle.github.io/mdi-companion/projects/mdi-chaos.html#preset-comparison)
+shows the classic chaotic and fixed-point runs on shared axes, labels both fitted slopes,
+and provides both CSV downloads.
+
 ## Scientific model
 
 The equations are `dx/dt = σ(y − x)`, `dy/dt = x(ρ − z) − y`, and `dz/dt = xy − βz`. Both trajectories use classical fourth-order Runge–Kutta (RK4) in double precision. The primary starts at (1, 1, 1) and the perturbed trajectory starts at (1 + δ₀, 1, 1). The simulation clock is the step index multiplied by the fixed integration step. Wall-clock pacing controls animation speed.
