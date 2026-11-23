@@ -2,14 +2,21 @@ package edu.cnu.mdi.chaos.app;
 
 import java.awt.BorderLayout;
 import java.beans.PropertyVetoException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 
+import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.jogamp.opengl.GLProfile;
 
 import edu.cnu.mdi.app.BaseMDIApplication;
+import edu.cnu.mdi.chaos.io.DiagnosticsCsv;
 import edu.cnu.mdi.chaos.model.LorenzParameters;
 import edu.cnu.mdi.chaos.sim.ChaosSimulation;
 import edu.cnu.mdi.chaos.view.ChaosControlPanel;
@@ -49,7 +56,7 @@ public final class ChaosApp extends BaseMDIApplication implements SimulationList
     protected void addInitialViews() {
         trajectories = new LorenzView();
         timeSeries = ChaosPlotView.timeSeries();
-        diagnostics = ChaosPlotView.diagnostics();
+        diagnostics = ChaosPlotView.diagnostics(this::exportDiagnostics);
     }
 
     @Override
@@ -135,6 +142,62 @@ public final class ChaosApp extends BaseMDIApplication implements SimulationList
         trajectories3D.moveToFront();
     }
 
+    private void exportDiagnostics() {
+        // Capture the run and fit when Export is clicked, before the chooser starts a nested EDT loop.
+        var frame = simulation.readSince(-1);
+        var parameters = activeParameters;
+        var fit = diagnostics.selectedFit();
+        var chooser = new JFileChooser();
+        chooser.setDialogTitle("Export Chaos Diagnostics");
+        chooser.setFileFilter(new FileNameExtensionFilter("CSV files", "csv"));
+        chooser.setSelectedFile(new java.io.File("chaos-diagnostics.csv"));
+        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+        Path selected = chooser.getSelectedFile().toPath().toAbsolutePath();
+        String name = selected.getFileName().toString();
+        Path destination = name.toLowerCase(Locale.ROOT).endsWith(".csv")
+                ? selected : selected.resolveSibling(name + ".csv");
+        boolean overwrite = Files.exists(destination);
+        if (overwrite && JOptionPane.showConfirmDialog(this, "Replace " + destination.getFileName() + "?",
+                "Confirm CSV export", JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                Path temporary = Files.createTempFile(destination.getParent(), ".chaos-diagnostics-", ".csv");
+                try {
+                    try (var output = Files.newBufferedWriter(temporary)) {
+                        DiagnosticsCsv.write(output, frame.samples(), parameters, fit, frame.lyapunovEstimate());
+                    }
+                    if (overwrite) {
+                        Files.move(temporary, destination, StandardCopyOption.REPLACE_EXISTING);
+                    } else {
+                        Files.move(temporary, destination);
+                    }
+                } finally {
+                    Files.deleteIfExists(temporary);
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                } catch (InterruptedException error) {
+                    Thread.currentThread().interrupt();
+                } catch (ExecutionException error) {
+                    JOptionPane.showMessageDialog(ChaosApp.this,
+                            "Could not export CSV. " + error.getCause().getMessage(),
+                            "CSV export failed", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }.execute();
+    }
+
     private void runSimulation() {
         controls.pending("Starting…");
         simulation.engine().requestRun();
@@ -198,6 +261,7 @@ public final class ChaosApp extends BaseMDIApplication implements SimulationList
         diagnostics.showLyapunovEstimate(frame.lyapunovEstimate());
         if (!frame.samples().isEmpty()) {
             lastSample = frame.samples().get(frame.samples().size() - 1).step();
+            diagnostics.setExportEnabled(true);
         }
     }
 

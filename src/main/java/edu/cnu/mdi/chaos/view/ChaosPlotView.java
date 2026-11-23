@@ -11,6 +11,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import edu.cnu.mdi.chaos.io.DiagnosticsCsv.FitSelection;
 import edu.cnu.mdi.chaos.model.ChaosSnapshot;
 import edu.cnu.mdi.chaos.model.LyapunovEstimate;
 import edu.cnu.mdi.chaos.sim.ChaosSimulation;
@@ -34,20 +35,21 @@ public final class ChaosPlotView extends BaseView {
     private final JLabel lyapunov = new JLabel();
 
     public static ChaosPlotView timeSeries() {
-        return new ChaosPlotView("Time Series", "Primary trajectory", "Coordinate", false,
+        return new ChaosPlotView("Time Series", "Primary trajectory", "Coordinate", null,
                 new Series("x", new Color(26, 106, 157), sample -> sample.primary().x()),
                 new Series("y", new Color(178, 73, 33), sample -> sample.primary().y()),
                 new Series("z", new Color(40, 121, 88), sample -> sample.primary().z()));
     }
 
-    public static ChaosPlotView diagnostics() {
-        return new ChaosPlotView("Chaos Diagnostics", "Illustrative finite-time divergence", "ln(δ / δ₀)", true,
+    public static ChaosPlotView diagnostics(Runnable onExport) {
+        return new ChaosPlotView("Chaos Diagnostics", "Illustrative finite-time divergence", "ln(δ / δ₀)", onExport,
                 new Series("Divergence", new Color(121, 58, 147), ChaosSnapshot::logDivergence));
     }
 
-    private ChaosPlotView(String title, String plotTitle, String yLabel, boolean includeFit, Series... series) {
+    private ChaosPlotView(String title, String plotTitle, String yLabel, Runnable onExport, Series... series) {
         super(PropertyUtils.TITLE, title, PropertyUtils.WIDTH, 510, PropertyUtils.HEIGHT, 300,
                 PropertyUtils.USECONTAINER, false, PropertyUtils.VISIBLE, true);
+        boolean includeFit = onExport != null;
         this.series = List.of(series);
         curves = new Curve[series.length];
         try {
@@ -72,7 +74,7 @@ public final class ChaosPlotView extends BaseView {
                 fitLine.getStyle().setSymbolType(SymbolType.NOSYMBOL);
                 fitLine.getStyle().setLineColor(new Color(185, 82, 24));
                 fitLine.getStyle().setLineWidth(2f);
-                fitPanel = new DivergenceFitPanel(curves[0], fitLine);
+                fitPanel = new DivergenceFitPanel(curves[0], fitLine, onExport);
             } else {
                 fitPanel = null;
             }
@@ -92,6 +94,14 @@ public final class ChaosPlotView extends BaseView {
             add(diagnosticControls, BorderLayout.SOUTH);
         }
         canvas.standUp();
+    }
+
+    public FitSelection selectedFit() {
+        return fitPanel.selectedFit();
+    }
+
+    public void setExportEnabled(boolean enabled) {
+        fitPanel.setExportEnabled(enabled);
     }
 
     public void resetDiagnostic(boolean zeroPerturbation) {

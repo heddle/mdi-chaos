@@ -56,8 +56,8 @@ bash scripts/smoke-test-zip.sh /path/to/mdi-chaos-runnable.zip
 ```
 
 The test launches the downloaded JAR and bundled libraries without Maven.
-It checks the 2D plots, divergence fit, Lyapunov estimate, simulation controls,
-and 16 consecutive 3D close-and-reopen cycles. It opens a real desktop window,
+It checks the 2D plots, divergence fit, Lyapunov estimate, CSV export,
+simulation controls, and 16 consecutive 3D close-and-reopen cycles. It opens a real desktop window,
 uses a temporary working directory, and reports a failure if Swing stalls.
 The test uses internal application state, so use the smoke test from the same
 revision as the app if a future release changes the UI or model structure.
@@ -71,6 +71,11 @@ revision as the app if a future release changes the UI or model structure.
 - **Fit a divergence interval** by entering **Fit start** and **Fit end** in Chaos Diagnostics and clicking **Fit**. The line is a least-squares fit to the recorded samples within those bounds. The view reports the interval, sample count, and finite-time slope estimate. Pause to inspect the curve, then choose a rising segment before saturation. **Clear fit** removes the line. Reset also clears it.
 - **Estimate the largest Lyapunov exponent** by checking **Estimate Lyapunov exponent** and clicking **Reset**. The estimate appears in Chaos Diagnostics after warm-up and updates as complete intervals accumulate. Clear the checkbox and reset to disable it.
 - **3D view** opens a movable MDI window showing the same trajectories in (x, y, z). Turn off **Auto-rotate** to hold the orientation. Drag to rotate manually and use the mouse wheel to zoom. Closing the 3D window leaves the simulation running. Reopen it to see the latest trail.
+- **Export diagnostics to CSV** with **Export CSV** in Chaos Diagnostics.
+  The export captures the currently retained samples, active parameters, selected fit interval and
+  slope, and the optional Lyapunov estimate and averaging duration. Each row contains one time sample
+  and repeats the run metadata for easy filtering. Undefined values and absent fit fields are blank.
+  The export uses the bounded sample history available when you click **Export CSV**.
 - **Capture a trajectory image** with the camera in the Lorenz Trajectories toolbar. For the classic butterfly, run until the time display reaches about 65–85, then pause. The same toolbar provides navigation and view help.
 
 ## Scientific model

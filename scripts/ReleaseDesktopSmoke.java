@@ -4,8 +4,11 @@ import java.awt.Rectangle;
 import java.awt.Window;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Deque;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -13,6 +16,7 @@ import java.util.concurrent.TimeoutException;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JFileChooser;
 import javax.swing.JInternalFrame;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
@@ -102,6 +106,8 @@ public final class ReleaseDesktopSmoke {
                         && ((Curve) field(panel, "line")).length() == 2;
             }), "Selected interval, slope and two line endpoints");
             System.out.println("2D plots, interactive divergence fit and Lyapunov estimate passed.");
+            phase = "diagnostics CSV export";
+            verifyCsvExport();
             phase = "first 3D open";
             click("3D view");
             await(() -> field(app, "trajectories3D") != null);
@@ -192,6 +198,59 @@ public final class ReleaseDesktopSmoke {
             Runtime.getRuntime().halt(1);
         }
     }
+    private static void verifyCsvExport() throws Exception {
+        Path selection = Path.of("diagnostics-smoke").toAbsolutePath();
+        Path output = selection.resolveSibling("diagnostics-smoke.csv");
+        edt(() -> {
+            JButton export = button("Export CSV");
+            check(export != null && export.isShowing() && export.isEnabled(), "Export CSV is available");
+            SwingUtilities.invokeLater(() -> export.doClick(0));
+            return null;
+        });
+        await(() -> visibleFileChooser() != null);
+        edt(() -> {
+            var chooser = visibleFileChooser();
+            chooser.setSelectedFile(selection.toFile());
+            chooser.approveSelection();
+            return null;
+        });
+        await(() -> Files.isRegularFile(output));
+        var rows = Files.readAllLines(output);
+        check(rows.size() > 1000, "CSV includes retained samples");
+        String[] columns = rows.get(0).split(",", -1);
+        String[] values = rows.get(1).split(",", -1);
+        check(columns.length == 19 && values.length == columns.length, "CSV columns and sample row");
+        check(values[4].equals("10.0") && values[7].equals("0.005")
+                        && values[9].equals("15.0") && values[10].equals("30.0")
+                        && Double.parseDouble(values[11]) > 0.5
+                        && values[13].equals("estimated") && Double.parseDouble(values[15]) > 0,
+                "CSV includes active parameters, fit and Lyapunov metadata");
+        System.out.println("Diagnostics CSV export passed with " + (rows.size() - 1) + " sample rows.");
+    }
+
+    private static JFileChooser visibleFileChooser() {
+        return Arrays.stream(Window.getWindows())
+                .filter(Window::isShowing)
+                .map(ReleaseDesktopSmoke::fileChooser)
+                .filter(Objects::nonNull)
+                .findFirst().orElse(null);
+    }
+
+    private static JFileChooser fileChooser(Container parent) {
+        for (Component component : parent.getComponents()) {
+            if (component instanceof JFileChooser chooser) {
+                return chooser;
+            }
+            if (component instanceof Container child) {
+                JFileChooser chooser = fileChooser(child);
+                if (chooser != null) {
+                    return chooser;
+                }
+            }
+        }
+        return null;
+    }
+
     private static JLabel lyapunov() throws Exception { return (JLabel) field(field(app, "diagnostics"), "lyapunov"); }
     private static JCheckBox checkbox(Container parent) {
         for (var child : parent.getComponents()) {

@@ -10,6 +10,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import edu.cnu.mdi.chaos.io.DiagnosticsCsv.FitSelection;
 import edu.cnu.mdi.chaos.model.DivergenceFit;
 import edu.cnu.mdi.splot.pdata.Curve;
 
@@ -22,9 +23,12 @@ final class DivergenceFitPanel extends JPanel {
     private final JLabel result = new JLabel(INSTRUCTIONS);
     private final Curve data;
     private final Curve line;
+    private final JButton export = new JButton("Export CSV");
     private DivergenceFit estimate;
+    private double selectedStart;
+    private double selectedEnd;
 
-    DivergenceFitPanel(Curve data, Curve line) {
+    DivergenceFitPanel(Curve data, Curve line, Runnable onExport) {
         super(new BorderLayout());
         this.data = data;
         this.line = line;
@@ -35,7 +39,12 @@ final class DivergenceFitPanel extends JPanel {
         controls.add(clear);
         add(controls, BorderLayout.NORTH);
         result.setBorder(BorderFactory.createEmptyBorder(2, 8, 6, 8));
-        add(result, BorderLayout.SOUTH);
+        var footer = new JPanel(new BorderLayout(6, 0));
+        footer.add(result, BorderLayout.CENTER);
+        footer.add(export, BorderLayout.EAST);
+        add(footer, BorderLayout.SOUTH);
+        export.setEnabled(false);
+        export.addActionListener(event -> onExport.run());
         clear.setEnabled(false);
         fit.addActionListener(event -> fit());
         clear.addActionListener(event -> clearResult(INSTRUCTIONS));
@@ -66,6 +75,8 @@ final class DivergenceFitPanel extends JPanel {
                 return;
             }
             estimate = DivergenceFit.estimate(samples.x, samples.y, startTime, endTime);
+            selectedStart = startTime;
+            selectedEnd = endTime;
             double first = estimate.firstTime();
             double last = estimate.lastTime();
             line.addAll(new double[] {first, last},
@@ -92,7 +103,16 @@ final class DivergenceFitPanel extends JPanel {
         }
     }
 
+    FitSelection selectedFit() {
+        return estimate == null ? null : new FitSelection(selectedStart, selectedEnd, estimate);
+    }
+
+    void setExportEnabled(boolean enabled) {
+        export.setEnabled(enabled);
+    }
+
     void reset(boolean zeroPerturbation) {
+        setExportEnabled(false);
         start.setEnabled(!zeroPerturbation);
         end.setEnabled(!zeroPerturbation);
         fit.setEnabled(!zeroPerturbation);
