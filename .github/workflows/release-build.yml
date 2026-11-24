@@ -5,6 +5,16 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
 
+  workflow_dispatch:
+    inputs:
+      release-tag:
+        description: Existing version tag to rebuild, test, and publish
+        required: true
+        type: string
+
+env:
+  RELEASE_TAG: ${{ inputs.release-tag || github.ref_name }}
+
 permissions:
   contents: read
 
@@ -16,6 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
           persist-credentials: false
       - uses: actions/setup-java@v5
         with:
@@ -23,7 +34,9 @@ jobs:
           java-version: '17'
           cache: maven
       - name: Verify and package
-        run: bash scripts/build-runnable.sh "$GITHUB_REF_NAME"
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          bash scripts/build-runnable.sh "$RELEASE_TAG"
       - name: Upload runnable ZIP
         id: runnable
         uses: actions/upload-artifact@v7
@@ -39,6 +52,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
           persist-credentials: false
       - uses: actions/setup-java@v5
         with:
@@ -61,7 +75,7 @@ jobs:
           xvfb-run -a --server-args="-screen 0 1600x1000x24 +extension GLX" bash -euc '
             glxinfo -B
             bash scripts/smoke-test-zip.sh "$1"
-          ' bash "release-assets/mdi-chaos-${GITHUB_REF_NAME#v}-runnable.zip"
+          ' bash "release-assets/mdi-chaos-${RELEASE_TAG#v}-runnable.zip"
 
   desktop-smoke-windows:
     needs: build
@@ -70,6 +84,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
           persist-credentials: false
       - uses: actions/setup-java@v5
         with:
@@ -85,7 +100,7 @@ jobs:
         shell: bash
         run: |
           export JAVA_HOME="$(cygpath -u "$JAVA_HOME")"
-          bash scripts/smoke-test-zip.sh "release-assets/mdi-chaos-${GITHUB_REF_NAME#v}-runnable.zip"
+          bash scripts/smoke-test-zip.sh "release-assets/mdi-chaos-${RELEASE_TAG#v}-runnable.zip"
 
   desktop-smoke-macos:
     needs: build
@@ -94,11 +109,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
           persist-credentials: false
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '17'
+          # Match the Java 17 update that passed the Intel macOS desktop test.
+          java-version: '17.0.12'
       - name: Download runnable ZIP
         uses: actions/download-artifact@v8
         with:
@@ -107,7 +124,7 @@ jobs:
           skip-decompress: true
       - name: Verify packaged app on macOS
         shell: bash
-        run: bash scripts/smoke-test-zip.sh "release-assets/mdi-chaos-${GITHUB_REF_NAME#v}-runnable.zip"
+        run: bash scripts/smoke-test-zip.sh "release-assets/mdi-chaos-${RELEASE_TAG#v}-runnable.zip"
 
   publish:
     needs: [build, desktop-smoke-linux, desktop-smoke-windows, desktop-smoke-macos]
@@ -126,10 +143,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          zip="release-assets/mdi-chaos-${GITHUB_REF_NAME#v}-runnable.zip"
+          zip="release-assets/mdi-chaos-${RELEASE_TAG#v}-runnable.zip"
           unzip -tq "$zip"
           mv "$zip" release-assets/mdi-chaos-runnable.zip
-          gh release create "$GITHUB_REF_NAME" "release-assets/mdi-chaos-runnable.zip#Runnable ZIP (Java 17+)" \
+          gh release create "$RELEASE_TAG" "release-assets/mdi-chaos-runnable.zip#Runnable ZIP (Java 17+)" \
             --repo "$GITHUB_REPOSITORY" --verify-tag --latest \
-            --title "MDI Chaos Lab $GITHUB_REF_NAME" --generate-notes \
+            --title "MDI Chaos Lab $RELEASE_TAG" --generate-notes \
             --notes 'Extract the runnable ZIP and run `java -jar mdi-chaos.jar` with Java 17 or newer. Keep the bundled `lib` folder next to the JAR.'
