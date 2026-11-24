@@ -104,7 +104,16 @@ jobs:
 
   desktop-smoke-macos:
     needs: build
-    runs-on: macos-15-intel
+    name: desktop-smoke-macos (${{ matrix.architecture }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            architecture: x64
+          - runner: macos-15
+            architecture: aarch64
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
@@ -114,7 +123,8 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          # Match the Java 17 update that passed the Intel macOS desktop test.
+          architecture: ${{ matrix.architecture }}
+          # Use the Java 17 update verified on both hosted macOS architectures.
           java-version: '17.0.12'
       - name: Download runnable ZIP
         uses: actions/download-artifact@v8

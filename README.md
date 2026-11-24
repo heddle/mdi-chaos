@@ -16,7 +16,7 @@ java -jar mdi-chaos.jar
 
 Keep the bundled `lib` folder next to the JAR. No Maven build is required.
 
-Before publication, the release workflow smoke-tests the runnable ZIP on Linux, Windows, and Intel macOS with Java 17, launching it without Maven.
+Before publication, the release workflow smoke-tests the runnable ZIP on Linux, Windows, Intel macOS, and Apple Silicon macOS with Java 17, launching it without Maven.
 
 ## Build from source
 
@@ -34,17 +34,17 @@ The entry point is `edu.cnu.mdi.chaos.app.ChaosApp`. The build uses the publishe
 Pushing a version tag such as `v1.0.1` runs the Maven tests and builds the
 runnable ZIP with Java 17 in GitHub Actions. Set the version in `pom.xml` to
 match the tag before pushing it. The workflow then runs the desktop smoke
-test against the built ZIP on Windows, Intel macOS, and a virtual Linux desktop
-with software OpenGL. Publication requires the Maven tests, packaging, and all
-three desktop checks to pass.
+test against the built ZIP on Windows, Intel macOS, Apple Silicon macOS, and a
+virtual Linux desktop with software OpenGL. Publication requires the Maven tests,
+packaging, and all four desktop checks to pass.
 The GitHub release includes generated notes and attaches the ZIP as
 `mdi-chaos-runnable.zip`, keeping the latest download link stable. The ZIP
 is also available in the workflow run's **Artifacts** section.
 
-The Intel macOS smoke job pins Eclipse Temurin to `17.0.12`. On the hosted
-runner, Java `17.0.20.1` stalled in AWT while opening the first window.
+Both macOS smoke jobs pin Eclipse Temurin to `17.0.12`. On the hosted
+Intel runner, Java `17.0.20.1` stalled in AWT while opening the first window.
 The pinned version passed the full smoke test, though startup can still
-occasionally stall on the hosted runner. The macOS job retries the full test
+occasionally stall on a hosted runner. Each macOS job retries the full test
 once if the smoke test times out before the app reaches Ready. A second
 timeout or any other test failure blocks publication. The pin applies to
 the CI job. The runnable ZIP requires Java 17 or newer.
@@ -62,7 +62,7 @@ gh workflow run release-build.yml --repo heddle/mdi-chaos --ref main -f release-
 
 Use the unpublished tag you want to retry. The workflow uses the definition
 from `main` and checks out the tagged commit to build and test the ZIP. All
-three desktop jobs must pass before publication. The tag keeps pointing to
+four desktop jobs must pass before publication. The tag keeps pointing to
 the same commit.
 
 ### Build locally
