@@ -16,7 +16,7 @@ java -jar mdi-chaos.jar
 
 Keep the bundled `lib` folder next to the JAR. No Maven build is required.
 
-The v1.0.10 runnable ZIP was verified on Linux, Windows, and Intel macOS with Java 17 and without Maven.
+Before publication, the release workflow smoke-tests the runnable ZIP on Linux, Windows, and Intel macOS with Java 17, launching it without Maven.
 
 ## Build from source
 
