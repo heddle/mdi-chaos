@@ -39,6 +39,29 @@ The GitHub release includes generated notes and attaches the ZIP as
 `mdi-chaos-runnable.zip`, keeping the latest download link stable. The ZIP
 is also available in the workflow run's **Artifacts** section.
 
+The Intel macOS smoke job pins Eclipse Temurin to `17.0.12`. On the hosted
+runner, Java `17.0.20.1` stalled in AWT while opening the first window.
+The pinned version passed the full smoke test. This pin applies to the
+CI job. The runnable ZIP requires Java 17 or newer.
+
+### Retry publication for an existing tag
+
+If a release failed before publication, push the workflow fix to `main`.
+Open **Actions → Publish release → Run workflow** on GitHub, choose
+`main`, and enter the existing tag in **release-tag**. With the GitHub CLI,
+for example:
+
+```sh
+gh workflow run release-build.yml --repo heddle/mdi-chaos --ref main -f release-tag=v1.0.8
+```
+
+Use the unpublished tag you want to retry. The workflow uses the definition
+from `main` and checks out the tagged commit to build and test the ZIP. All
+three desktop jobs must pass before publication. The tag keeps pointing to
+the same commit.
+
+### Build locally
+
 To reproduce the build locally with Maven, a JDK, and Python 3:
 
 ```sh
