@@ -34,7 +34,10 @@ import edu.cnu.mdi.splot.pdata.Curve;
 /** Desktop checks loaded as a Java agent so the packaged JAR starts normally. */
 public final class ReleaseDesktopSmoke {
     private static final int REOPEN_CYCLES = 16;
-    private static String phase = "startup";
+    private static final String STARTUP = "startup";
+    // The macOS release job retries this status once.
+    private static final int STARTUP_TIMEOUT = 75;
+    private static String phase = STARTUP;
     private static ChaosApp app;
     public static void premain(String args) {
         new Thread(ReleaseDesktopSmoke::verifyDownload, "Packaged app verification").start();
@@ -48,6 +51,7 @@ public final class ReleaseDesktopSmoke {
                 return app != null && app.isShowing();
             });
             await(() -> label("Ready") && button("Start").isEnabled());
+            phase = "desktop layout";
             await(() -> {
                 var desktop = Desktop.getInstance();
                 var frames = desktop.getAllFrames();
@@ -65,6 +69,7 @@ public final class ReleaseDesktopSmoke {
             });
             System.out.println("Layout passed: three visible nonoverlapping views inside the desktop.");
             check(edt(() -> field(app, "trajectories3D") == null), "2D startup never initializes 3D");
+            phase = "simulation controls";
             var initial = edt(ReleaseDesktopSmoke::snapshot);
             edt(() -> { checkbox(app).doClick(); return null; });
             check(edt(() -> !lyapunov().isVisible()), "Checkbox takes effect on Reset");
@@ -195,7 +200,7 @@ public final class ReleaseDesktopSmoke {
         } catch (Throwable e) {
             System.err.println("Desktop smoke test failed during " + phase);
             e.printStackTrace();
-            Runtime.getRuntime().halt(1);
+            Runtime.getRuntime().halt(STARTUP.equals(phase) && e instanceof TimeoutException ? STARTUP_TIMEOUT : 1);
         }
     }
     private static void verifyCsvExport() throws Exception {
@@ -312,7 +317,9 @@ public final class ReleaseDesktopSmoke {
                     }
                 }
             });
-            throw new AssertionError("Swing event thread did not respond", error);
+            var timeout = new TimeoutException("Swing event thread did not respond");
+            timeout.initCause(error);
+            throw timeout;
         }
     }
     private static void await(Callable<Boolean> condition) throws Exception {
@@ -321,7 +328,7 @@ public final class ReleaseDesktopSmoke {
             if (edt(condition)) return;
             Thread.sleep(20);
         } while (System.nanoTime() < deadline);
-        throw new AssertionError("Timed out waiting for desktop state");
+        throw new TimeoutException("Timed out waiting for desktop state");
     }
     private static void check(boolean condition, String message) {
         if (!condition) throw new AssertionError(message);

@@ -41,8 +41,11 @@ is also available in the workflow run's **Artifacts** section.
 
 The Intel macOS smoke job pins Eclipse Temurin to `17.0.12`. On the hosted
 runner, Java `17.0.20.1` stalled in AWT while opening the first window.
-The pinned version passed the full smoke test. This pin applies to the
-CI job. The runnable ZIP requires Java 17 or newer.
+The pinned version passed the full smoke test, though startup can still
+occasionally stall on the hosted runner. The macOS job retries the full test
+once if the smoke test times out before the app reaches Ready. A second
+timeout or any other test failure blocks publication. The pin applies to
+the CI job. The runnable ZIP requires Java 17 or newer.
 
 ### Retry publication for an existing tag
 

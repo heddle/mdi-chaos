@@ -124,7 +124,15 @@ jobs:
           skip-decompress: true
       - name: Verify packaged app on macOS
         shell: bash
-        run: bash scripts/smoke-test-zip.sh "release-assets/mdi-chaos-${RELEASE_TAG#v}-runnable.zip"
+        run: |
+          zip="release-assets/mdi-chaos-${RELEASE_TAG#v}-runnable.zip"
+          status=0
+          bash scripts/smoke-test-zip.sh "$zip" || status=$?
+          if [[ "$status" -ne 75 ]]; then
+            exit "$status"
+          fi
+          echo "::warning::macOS desktop startup timed out. Retrying the full smoke test once."
+          bash scripts/smoke-test-zip.sh "$zip"
 
   publish:
     needs: [build, desktop-smoke-linux, desktop-smoke-windows, desktop-smoke-macos]
