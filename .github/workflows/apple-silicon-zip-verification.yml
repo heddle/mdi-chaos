@@ -1,0 +1,39 @@
+name: Verify latest ZIP on Apple Silicon
+
+on:
+  push:
+    branches: [codex/apple-silicon-zip-verification]
+
+permissions:
+  contents: read
+
+jobs:
+  desktop-smoke:
+    runs-on: macos-15
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          architecture: aarch64
+          java-version: '17.0.12'
+      - name: Verify native runtime and download latest ZIP
+        run: |
+          test "$(uname -m)" = arm64
+          java -XshowSettings:properties -version 2>&1 | grep 'os.arch = aarch64'
+          curl -fsSL --retry 3 https://github.com/heddle/mdi-chaos/releases/latest/download/mdi-chaos-runnable.zip -o mdi-chaos-runnable.zip
+          unzip -p mdi-chaos-runnable.zip mdi-chaos-1.0.11/mdi-chaos.jar > release.jar
+          unzip -p release.jar META-INF/maven/edu.cnu/mdi-chaos/pom.properties | grep -Fx 'version=1.0.11'
+      - name: Run the packaged desktop checks
+        shell: bash
+        run: |
+          status=0
+          bash scripts/smoke-test-zip.sh mdi-chaos-runnable.zip || status=$?
+          if [[ "$status" -ne 75 ]]; then
+            exit "$status"
+          fi
+          echo "::warning::Startup timed out. Retrying the full smoke test once."
+          bash scripts/smoke-test-zip.sh mdi-chaos-runnable.zip
