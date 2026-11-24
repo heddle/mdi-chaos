@@ -52,7 +52,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: refs/tags/${{ env.RELEASE_TAG }}
+          # Use this workflow revision's harness when recovering an existing tag.
+          ref: ${{ github.workflow_sha }}
           persist-credentials: false
       - uses: actions/setup-java@v5
         with:
@@ -84,7 +85,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: refs/tags/${{ env.RELEASE_TAG }}
+          # Use this workflow revision's harness when recovering an existing tag.
+          ref: ${{ github.workflow_sha }}
           persist-credentials: false
       - uses: actions/setup-java@v5
         with:
@@ -118,7 +120,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: refs/tags/${{ env.RELEASE_TAG }}
+          # Use this workflow revision's harness when recovering an existing tag.
+          ref: ${{ github.workflow_sha }}
           persist-credentials: false
       - uses: actions/setup-java@v5
         with:

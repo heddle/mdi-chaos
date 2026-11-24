@@ -89,7 +89,8 @@ public final class ReleaseDesktopSmoke {
 
             phase = "2D plots and diagnostics";
             click("Resume");
-            await(() -> snapshot().time() >= 50);
+            // The simulation is paced by wall time and hosted desktop runners can run slowly.
+            await(() -> snapshot().time() >= 50, 120);
             click("Pause");
             await(() -> label("Paused"));
             check(edt(() -> Arrays.stream(curves("timeSeries")).allMatch(curve -> curve.length() > 1000)
@@ -323,7 +324,11 @@ public final class ReleaseDesktopSmoke {
         }
     }
     private static void await(Callable<Boolean> condition) throws Exception {
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(45);
+        await(condition, 45);
+    }
+
+    private static void await(Callable<Boolean> condition, int timeoutSeconds) throws Exception {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
         do {
             if (edt(condition)) return;
             Thread.sleep(20);
