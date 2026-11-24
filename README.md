@@ -49,21 +49,35 @@ once if the smoke test times out before the app reaches Ready. A second
 timeout or any other test failure blocks publication. The pin applies to
 the CI job. The runnable ZIP requires Java 17 or newer.
 
+In the initial `v1.0.12` run on Apple Silicon, the app opened and single-step
+passed, but the running simulation took longer than the smoke test's
+45-second limit to reach simulation time 50. The smoke test now allows up to
+120 seconds for that condition. The macOS automatic retry applies only to
+startup timeouts before Ready. A simulation timeout after startup fails the
+job and blocks publication.
+
 ### Retry publication for an existing tag
 
-If a release failed before publication, push the workflow fix to `main`.
-Open **Actions → Publish release → Run workflow** on GitHub, choose
-`main`, and enter the existing tag in **release-tag**. With the GitHub CLI,
-for example:
+If a release failed before publication, push the workflow or smoke-test fix
+to `main`, then start a new run from `main` using the existing tag.
+
+1. Open **Actions → Publish release → Run workflow** on GitHub.
+2. Choose `main` in the branch selector and enter the existing tag in
+   **release-tag**.
+3. Click **Run workflow** and watch the new run.
+
+With the GitHub CLI, substitute the unpublished tag you want to retry:
 
 ```sh
-gh workflow run release-build.yml --repo heddle/mdi-chaos --ref main -f release-tag=v1.0.8
+gh workflow run release-build.yml --repo heddle/mdi-chaos --ref main -f release-tag=v1.0.12
 ```
 
-Use the unpublished tag you want to retry. The workflow uses the definition
-from `main` and checks out the tagged commit to build and test the ZIP. All
-four desktop jobs must pass before publication. The tag keeps pointing to
-the same commit.
+The new run uses the workflow and desktop smoke-test harness from the
+selected `main` revision. It checks out the existing tag for the Maven tests
+and ZIP build, then runs all four desktop smoke tests against that ZIP before
+publication. The tag keeps pointing to the same commit. GitHub's **Re-run
+jobs** action uses the original workflow revision, so use **Run workflow**
+to pick up fixes pushed to `main`.
 
 ### Build locally
 
