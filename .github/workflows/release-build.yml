@@ -162,6 +162,15 @@ jobs:
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_NOTES: |
+            Extract the runnable ZIP and run `java -jar mdi-chaos.jar` with Java 17 or newer. Keep the bundled `lib` folder next to the JAR.
+
+            The runnable ZIP passed desktop smoke tests with Java 17 and without Maven on:
+
+            - Linux
+            - Windows
+            - Intel macOS
+            - Apple Silicon macOS
         run: |
           set -euo pipefail
           zip="release-assets/mdi-chaos-${RELEASE_TAG#v}-runnable.zip"
@@ -170,4 +179,4 @@ jobs:
           gh release create "$RELEASE_TAG" "release-assets/mdi-chaos-runnable.zip#Runnable ZIP (Java 17+)" \
             --repo "$GITHUB_REPOSITORY" --verify-tag --latest \
             --title "MDI Chaos Lab $RELEASE_TAG" --generate-notes \
-            --notes 'Extract the runnable ZIP and run `java -jar mdi-chaos.jar` with Java 17 or newer. Keep the bundled `lib` folder next to the JAR.'
+            --notes "$RELEASE_NOTES"
