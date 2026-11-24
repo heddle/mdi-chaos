@@ -16,6 +16,8 @@ java -jar mdi-chaos.jar
 
 Keep the bundled `lib` folder next to the JAR. No Maven build is required.
 
+The v1.0.10 runnable ZIP was verified on Linux, Windows, and Intel macOS with Java 17 and without Maven.
+
 ## Build from source
 
 With Java 17 or newer and Maven, run the following from the project directory. Launching the application requires a graphical desktop. The optional 3D window uses MDI-3D 1.0.3 and JOGL, and needs OpenGL support. The application opens in 2D and initializes OpenGL when the 3D window is first requested. The tests run headlessly.
