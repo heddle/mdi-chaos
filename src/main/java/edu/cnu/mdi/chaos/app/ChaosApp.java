@@ -62,7 +62,7 @@ public final class ChaosApp extends BaseMDIApplication implements SimulationList
     @Override
     protected void onVirtualDesktopReady() {
         super.onVirtualDesktopReady();
-        // MDI 1.2.4 calls defaultViewLayout itself only with a virtual desktop.
+        // MDI 1.2.5 calls defaultViewLayout itself only with a virtual desktop.
         defaultViewLayout();
         validate();
     }

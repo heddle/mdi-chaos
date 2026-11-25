@@ -1,6 +1,6 @@
 # MDI Chaos Lab
 
-MDI Chaos Lab is a standalone Java 17 desktop simulation built on MDI 1.2.4. It advances two Lorenz systems with the same equations and parameters and a small difference in their starting positions. The desktop shows both trajectories in the x–z plane, the primary trajectory’s three coordinates on one sPlot chart, and a separate sPlot chart for divergence. An optional 3D view shows the same trajectories in full phase space.
+MDI Chaos Lab is a standalone Java 17 desktop simulation built on MDI 1.2.5. It advances two Lorenz systems with the same equations and parameters and a small difference in their starting positions. The desktop shows both trajectories in the x–z plane, the primary trajectory’s three coordinates on one sPlot chart, and a separate sPlot chart for divergence. An optional 3D view shows the same trajectories in full phase space.
 
 ![MDI Chaos Lab paused at simulation time 50, showing the 3D Lorenz trajectories alongside the 2D projection, time series, divergence fit, and running Lyapunov estimate](docs/desktop-screenshot.png)
 
@@ -27,7 +27,7 @@ mvn clean verify
 mvn exec:java
 ```
 
-The entry point is `edu.cnu.mdi.chaos.app.ChaosApp`. The build uses the published `io.github.heddle:mdi:1.2.4` dependency.
+The entry point is `edu.cnu.mdi.chaos.app.ChaosApp`. The build uses the published `io.github.heddle:mdi:1.2.5` dependency.
 
 ## Build a runnable release ZIP
 
@@ -151,6 +151,6 @@ This is a finite-perturbation numerical estimate whose accuracy depends on run l
 - `sim` adapts the model to MDI’s `SimulationEngine`. The worker alone mutates the model. It paces continuous integration in batches and MDI coalesces refresh events at roughly 25 Hz. Each EDT refresh reads the exact current state and copies only newly retained sample references under a short lock. The returned list and its samples are immutable.
 - `app` and `view` coordinate controls, MDI drawing and sPlot on the EDT. Each history holds at most 6,000 samples. sPlot trims in blocks to amortize rebuilding its curve arrays. The oldest part of a long run eventually rolls off the display. Reset cancels the previous worker, clears the views, creates a new engine, and ignores callbacks from the retired engine.
 
-MDI 1.2.4 exposes run, resume and pause, but no step-once transition. The app arms a one-shot flag while the engine is Ready or Paused, then requests run. The worker consumes that flag, advances both trajectories once, and requests pause before returning from its MDI step callback. MDI checks the pause flag on the same worker before invoking the callback again. The EDT keeps the run, pause and step buttons disabled until MDI confirms Paused. Reset can retire the engine while a command is pending.
+MDI 1.2.5 exposes run, resume and pause, but no step-once transition. The app arms a one-shot flag while the engine is Ready or Paused, then requests run. The worker consumes that flag, advances both trajectories once, and requests pause before returning from its MDI step callback. MDI checks the pause flag on the same worker before invoking the callback again. The EDT keeps the run, pause and step buttons disabled until MDI confirms Paused. Reset can retire the engine while a command is pending.
 
 The thirteen automated tests cover fourth-order convergence over a short interval, replay, reset, time, perturbation and divergence, bounded history, invalid inputs, selected-interval regression, Lyapunov estimation, and single-step behavior through the real MDI engine.
